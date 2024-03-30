@@ -1,17 +1,26 @@
 ﻿using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
 namespace Persistence.Context
 {
-    public class ApplicationDbContext
+    public class ApplicationDbContext//: DbContext
     {
         public readonly IMongoDatabase _database;
 
         public ApplicationDbContext()
         {
-
+            var client = new MongoClient("mongodb+srv://fatihmalyemezenerya:fpIM85669huxTeNq@cluster0.bnmmkpg.mongodb.net/AppDb?retryWrites=true&w=majority&appName=Cluster0");
+            _database = client.GetDatabase("AppDb");
         }
+
+        public ApplicationDbContext(string connectionString, string databaseName)
+        {
+            var client = new MongoClient("mongodb+srv://fatihmalyemezenerya:fpIM85669huxTeNq@cluster0.bnmmkpg.mongodb.net/AppDb?retryWrites=true&w=majority&appName=Cluster0");
+            _database = client.GetDatabase("AppDb");
+        }
+
         //public ApplicationDbContext(IConfiguration configuration)
         //{
         //    var databasesSection = configuration.GetSection("Databases");

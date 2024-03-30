@@ -1,82 +1,75 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using System.Reflection;
 
 namespace Persistence.HostedService
 {
     public class MongoDbInitializer<T> : IHostedService where T : class
     {
-        private readonly IMongoDatabase _database;
-        private readonly IMongoCollection<T> _collection;
-        private readonly MongoUrl _mongoUrl;
+        private readonly string _mongoDbConnectionString;
+        private readonly string _databaseName;
+        private readonly List<string> _collectionNames;
+        private readonly ILogger<MongoDbInitializer<T>> _logger;
 
-        public MongoDbInitializer(MongoUrl mongoUrl, IMongoDatabase database, IMongoCollection<T> collection)
+        public MongoDbInitializer(string? mongoDbConnectionString, string? databaseName, List<string> collectionNames, ILogger<MongoDbInitializer<T>> logger)
         {
-            _database = database;
-            _collection = collection;
-            _mongoUrl = mongoUrl;
+            _mongoDbConnectionString = mongoDbConnectionString ?? throw new ArgumentNullException(nameof(mongoDbConnectionString));
+            _databaseName = databaseName ?? throw new ArgumentNullException(nameof(databaseName));
+            _collectionNames = collectionNames ?? throw new ArgumentNullException(nameof(collectionNames));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            //_logger.LogInformation("MongoDbInitializer is starting.");
-
-            var mongoUrl = new MongoUrl(_mongoUrl.ToString());
-            var username = mongoUrl.Username;
-            var password = mongoUrl.Password;
-
-            // Kimlik doğrulama bilgileriyle yeni bir MongoClient oluştur
-            var settings = MongoClientSettings.FromUrl(mongoUrl);
-            settings.Credential = MongoCredential.CreateCredential(mongoUrl.DatabaseName, username, password);
-            var mongoClient = new MongoClient(settings);
-
-            var database = mongoClient.GetDatabase(_database.DatabaseNamespace.DatabaseName);
-
-            if (!await DatabaseExistsAsync(database))
+            try
             {
-                await DatabaseExistsAsync(database);
-            }
-            await CreateCollectionsAsync(database);
+                var mongoClient = new MongoClient(_mongoDbConnectionString);
+                var database = mongoClient.GetDatabase(_databaseName);
 
-            //_logger.LogInformation("MongoDbInitializer has finished its work.");
+                bool databaseExists = await DatabaseExistsAsync(mongoClient, _databaseName);
+                /*if (!databaseExists)
+                {
+                    await database.CreateCollectionAsync("dummy"); // MongoDB'de bir veritabanı oluşturmak için en az bir koleksiyon oluşturmak gerekir
+                    _logger.LogInformation($"MongoDB database '{_databaseName}' oluşturuldu.");
+                }*/
+
+                foreach (var collectionName in _collectionNames)
+                {
+                    bool collectionExists = await CollectionExistsAsync(database, collectionName);
+                    if (!collectionExists)
+                    {
+                        await database.CreateCollectionAsync(collectionName);
+                        _logger.LogInformation($"MongoDB collection '{collectionName}' created.");
+                    }
+                }
+
+                _logger.LogInformation("MongoDB database and collections have been successfully prepared.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Hata: {ex.Message}");
+                //throw; // Hata durumunda uygulamanın başlatılmasını engellemek için istisnayı yeniden fırlat
+            }
         }
+
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Application has been closed.");
             return Task.CompletedTask;
         }
 
-        private async Task<bool> DatabaseExistsAsync(IMongoDatabase database)
+        private async Task<bool> DatabaseExistsAsync(MongoClient mongoClient, string databaseName)
         {
-            var databaseNames = await database.Client.ListDatabaseNames().ToListAsync();
-            return databaseNames.Contains(database.DatabaseNamespace.DatabaseName);
+            var databaseNames = await mongoClient.ListDatabaseNamesAsync();
+            return (await databaseNames.ToListAsync()).Contains(databaseName);
         }
 
-        private async Task CreateCollectionsAsync(IMongoDatabase database)
-        {
-            var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.PropertyType.IsGenericType &&
-                            p.PropertyType.GetGenericTypeDefinition() == typeof(IMongoCollection<>));
-
-            foreach (var property in properties)
-            {
-                var collectionType = property.PropertyType.GetGenericArguments().FirstOrDefault();
-                if (collectionType != null)
-                {
-                    var collectionName = collectionType.Name + "s";
-                    if (!await CollectionExists(database, collectionName))
-                    {
-                        await database.CreateCollectionAsync(collectionName);
-                        // _logger.LogInformation($"Collection '{collectionName}' created.");
-                    }
-                }
-            }
-        }
-        private async Task<bool> CollectionExists(IMongoDatabase database, string collectionName)
+        private async Task<bool> CollectionExistsAsync(IMongoDatabase database, string collectionName)
         {
             var filter = new BsonDocument("name", collectionName);
-            var collections = await database.ListCollectionsAsync(new ListCollectionsOptions { Filter = filter });
-            return await collections.AnyAsync();
+            var collections = await database.ListCollectionNames().ToListAsync();
+            return collections.Contains(collectionName);
         }
     }
 }

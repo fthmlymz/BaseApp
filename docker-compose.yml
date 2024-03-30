@@ -4,5 +4,5 @@ services:
   web.api:
     image: ${DOCKER_REGISTRY-}webapi
     build:
-      context: .
-      dockerfile: src/Backend/WebAPI/Web.API/Dockerfile
+      context: ..
+      dockerfile: BaseApp/src/Backend/WebAPI/Web.API/Dockerfile

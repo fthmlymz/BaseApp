@@ -1,5 +1,4 @@
 ﻿using Domain.Entities;
-using Domain.Entities;
 using MongoDB.Driver;
 
 namespace Persistence.Collections

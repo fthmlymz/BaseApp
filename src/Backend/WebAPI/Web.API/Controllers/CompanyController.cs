@@ -1,5 +1,7 @@
-﻿using MediatR;
+﻿using Application.Features.Company.Commands.CreateCompany;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Shared;
 
 namespace Web.API.Controllers
 {
@@ -12,6 +14,12 @@ namespace Web.API.Controllers
         public CompanyController(IMediator mediator)
         {
             _mediator = mediator;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Result<CreatedCompanyDto>>> CreateCompanyCommand(CreateCompanyCommand command)
+        {
+            return await _mediator.Send(command);
         }
 
 
