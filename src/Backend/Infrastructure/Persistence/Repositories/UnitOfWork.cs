@@ -26,7 +26,9 @@ namespace Persistence.Repositories
             }
         }
 
-        public IGenericRepository<T> Repository<T>() where T : BaseAuditableEntity
+
+
+        /*public IGenericRepository<T> Repository<T>() where T : BaseAuditableEntity
         {
             var type = typeof(T).Name;
 
@@ -38,18 +40,24 @@ namespace Persistence.Repositories
             }
 
             return (IGenericRepository<T>)Repositories[type];
-        }
-
-        public void SaveChanges()
+        }*/
+        public IGenericRepository<T> Repository<T>() where T : BaseAuditableEntity
         {
-            Console.WriteLine("save işlemi için");
-            //_dbContext.SaveChanges();
-        }
+            var type = typeof(T).Name;
 
-        public async Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            Console.WriteLine("save changes işlemi için");
-            //await _dbContext.SaveChangesAsync(cancellationToken);
+            if (_repositories == null)
+            {
+                _repositories = new Hashtable();
+            }
+
+            if (!Repositories.ContainsKey(type))
+            {
+                var repositoryType = typeof(GenericRepository<>);
+                var repositoryInstance = Activator.CreateInstance(repositoryType.MakeGenericType(typeof(T)), _dbContext);
+                Repositories.Add(type, repositoryInstance);
+            }
+
+            return (IGenericRepository<T>)Repositories[type]!;
         }
 
         public Task Rollback()

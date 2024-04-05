@@ -1,8 +1,8 @@
-﻿namespace Application.Features.Company.Commands.CreateCompany
+﻿namespace Application.Features.Companies.Commands.CreateCompany
 {
     public class CreatedCompanyDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string? Name { get; set; }
         public string? Description { get; set; }
         public string? CreatedBy { get; set; }

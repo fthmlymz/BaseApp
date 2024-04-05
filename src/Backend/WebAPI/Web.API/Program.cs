@@ -1,14 +1,10 @@
-using DotNetCore.CAP.Messages;
 using Application.Common.Exceptions;
 using Application.Common.Filters;
 using Application.Extensions;
 using Infrastructure.Extensions;
 using Persistence.Context;
 using Persistence.Extensions;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
-using System.Text.Unicode;
 
 var builder = WebApplication.CreateBuilder(args);
 

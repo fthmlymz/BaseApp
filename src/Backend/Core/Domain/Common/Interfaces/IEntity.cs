@@ -7,7 +7,6 @@ namespace Domain.Common.Interfaces
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        [BsonElement("DocumentId")] // _id alanını DocumentId olarak değiştirir
         public string Id { get; set; }
     }
 }

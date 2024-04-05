@@ -10,8 +10,8 @@ namespace Domain.Common
         private readonly List<BaseEvent> _domainEvents = new();
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        //[BsonElement("DocumentId")] // _id alanını DocumentId olarak değiştirir
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
+
 
         [NotMapped]
         public IReadOnlyCollection<BaseEvent> DomainEvents => _domainEvents.AsReadOnly();

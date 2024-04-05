@@ -21,6 +21,7 @@ namespace Persistence.Repositories
 
         public async Task<T> AddAsync(T entity)
         {
+            entity.CreatedDate= DateTime.UtcNow;
             await _collection.InsertOneAsync(entity);
             return entity;
         }
@@ -29,6 +30,7 @@ namespace Persistence.Repositories
         {
             /*var filter = Builders<T>.Filter.Eq(x => x.Id, entity.Id);
             await _collection.ReplaceOneAsync(filter, entity);*/
+            entity.UpdatedDate= DateTime.UtcNow;
             await _collection.ReplaceOneAsync(Builders<T>.Filter.Eq("_id", new ObjectId(id)), entity);
         }
 
